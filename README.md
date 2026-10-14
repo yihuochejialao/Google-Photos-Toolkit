@@ -4,7 +4,9 @@
 
 批量整理你的媒体文件 —— 本仓库是 [xob0t/Google-Photos-Toolkit](https://github.com/xob0t/Google-Photos-Toolkit) 的中文界面汉化版，仅翻译界面文案与运行时提示，逻辑与 API 调用完全保持原样。
 
-![demo](media/demo.png)
+![界面截图](media/demo-zh.png)
+
+<sub>截图来源：本仓库 v3.3.0-zh。上游英文版界面见 [demo-en.png](media/demo-en.png)。</sub>
 
 ## 工作原理
 
