@@ -4,6 +4,10 @@
 
 上游项目作者：**xob0t**（MIT License）。本分支仅做界面文案与运行时提示的翻译，**未修改任何业务逻辑与 API 调用**。
 
+![界面对比：左为上游英文版，右为汉化版](media/demo-zh.png)
+
+<sub>汉化版界面截图。上游英文版见 [media/demo-en.png](media/demo-en.png)。</sub>
+
 ## 汉化内容
 
 | 范围 | 说明 |
@@ -18,6 +22,12 @@
 - CSV 导出的表头字段名（`mediaKey`、`dedupKey`、`sizeBytes` 等），供下游脚本解析
 - 浏览器控制台里的调试信息（`console.error`）
 - 内部 RPC 标识符
+
+**刻意保留原作者署名的部分**：
+
+- 脚本元数据 `@author xob0t`、`@namespace` 与 `@icon` 仍指向上游，以符合 MIT 许可要求并表明衍生关系
+- 已改动的是 `@homepageURL` 与 `@supportURL`，现指向本仓库的中文说明页与 issue 区，避免中文用户被引到英文页面
+
 
 ## 安装
 

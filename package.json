@@ -1,7 +1,7 @@
 {
   "name": "google-photos-toolkit",
   "nameFull": "Google Photos Toolkit（中文版）",
-  "version": "3.3.0-zh",
+  "version": "3.3.1-zh",
   "description": "批量整理媒体文件（中文界面汉化版）",
   "userScript": {
     "namespace": "https://github.com/xob0t/Google-Photos-Toolkit",
@@ -29,11 +29,14 @@
   },
   "keywords": [],
   "author": "xob0t",
+  "contributors": [
+    "汉化：yihuochejialao"
+  ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/xob0t/Google-Photos-Toolkit/discussions"
+    "url": "https://github.com/yihuochejialao/Google-Photos-Toolkit/issues"
   },
-  "homepage": "https://github.com/xob0t/Google-Photos-Toolkit#readme",
+  "homepage": "https://github.com/yihuochejialao/Google-Photos-Toolkit#readme",
   "devDependencies": {
     "@rollup/plugin-replace": "^6.0.3",
     "@rollup/plugin-typescript": "^12.3.0",
