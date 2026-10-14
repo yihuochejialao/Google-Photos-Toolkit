@@ -1,0 +1,504 @@
+import Api from './api/api';
+import ApiUtils from './api/api-utils';
+import { timeToHHMMSS, isPatternValid } from './utils/helpers';
+import log from './ui/logic/log';
+import getFromStorage from './utils/getFromStorage';
+import * as filters from './filters';
+import { apiSettingsDefault } from './api/api-utils-default-presets';
+import type { MediaItem, Filter, Source, Action, Album, ApiSettings, LibraryTimelinePage } from './types';
+
+type ActionHandler = (params: ExecuteActionParams) => Promise<void>;
+
+interface ExecuteActionParams {
+  mediaItems: MediaItem[];
+  source: Source;
+  targetAlbum?: Album;
+  newTargetAlbumName?: string;
+  preserveOrder: boolean;
+}
+
+export default class Core {
+  isProcessRunning: boolean;
+  api: Api;
+  apiUtils!: ApiUtils;
+
+  private actionHandlers: Record<string, ActionHandler>;
+
+  constructor() {
+    this.isProcessRunning = false;
+    this.api = new Api();
+
+    this.actionHandlers = {
+      restoreTrash: async (p) => this.apiUtils.restoreFromTrash(p.mediaItems),
+      unLock: async (p) => this.apiUtils.removeFromLockedFolder(p.mediaItems),
+      lock: async (p) => this.apiUtils.moveToLockedFolder(p.mediaItems),
+      toExistingAlbum: async (p) => {
+        if (!p.targetAlbum) throw new Error('未指定目标相册');
+        await this.apiUtils.addToExistingAlbum(p.mediaItems, p.targetAlbum, p.preserveOrder);
+      },
+      toNewAlbum: async (p) => {
+        if (!p.newTargetAlbumName) throw new Error('未指定相册名称');
+        await this.apiUtils.addToNewAlbum(p.mediaItems, p.newTargetAlbumName, p.preserveOrder);
+      },
+      toTrash: async (p) => this.apiUtils.moveToTrash(p.mediaItems),
+      removeFromAlbum: async (p) => {
+        if (p.source !== 'albums') {
+          throw new Error('从相册移除需要将来源设为「相册」');
+        }
+        await this.apiUtils.removeFromAlbum(p.mediaItems);
+      },
+      toArchive: async (p) => this.apiUtils.sendToArchive(p.mediaItems),
+      unArchive: async (p) => this.apiUtils.unArchive(p.mediaItems),
+      toFavorite: async (p) => this.apiUtils.setAsFavorite(p.mediaItems),
+      unFavorite: async (p) => this.apiUtils.unFavorite(p.mediaItems),
+      copyDescFromOther: async (p) => this.apiUtils.copyDescriptionFromOther(p.mediaItems),
+      setDateFromFilename: async (p) => this.apiUtils.setTimestampFromFilename(p.mediaItems),
+      exportMetadata: async (p) => this.apiUtils.exportMetadata(p.mediaItems),
+    };
+  }
+
+  async getAndFilterMedia(filter: Filter, source: Source): Promise<MediaItem[]> {
+    const mediaItems = await this.fetchMediaItems(source, filter);
+    log(`共读取到 ${mediaItems.length} 项`);
+    if (!this.isProcessRunning || !mediaItems?.length) return mediaItems;
+
+    const filteredItems = await this.applyFilters(mediaItems, filter, source);
+    return filteredItems;
+  }
+
+  async fetchMediaItems(source: Source, filter: Filter): Promise<MediaItem[]> {
+    const sourceHandlers: Record<Source, () => Promise<MediaItem[]>> = {
+      library: async () => {
+        log('正在读取照片库');
+        return filter.dateType === 'uploaded'
+          ? await this.getLibraryItemsByUploadDate(filter)
+          : await this.getLibraryItemsByTakenDate(filter);
+      },
+      search: async () => {
+        log('正在读取搜索结果');
+        return await this.apiUtils.getAllSearchItems(filter.searchQuery ?? '');
+      },
+      trash: async () => {
+        log('正在读取回收站内容');
+        return await this.apiUtils.getAllTrashItems();
+      },
+      lockedFolder: async () => {
+        log('正在读取锁定文件夹内容');
+        return await this.apiUtils.getAllLockedFolderItems();
+      },
+      favorites: async () => {
+        log('正在读取收藏内容');
+        return await this.apiUtils.getAllFavoriteItems();
+      },
+      sharedLinks: async () => {
+        log('正在读取分享链接');
+        const sharedLinks = await this.apiUtils.getAllSharedLinks();
+        if (!sharedLinks || sharedLinks.length === 0) {
+          log('未找到任何分享链接', 'error');
+          return [];
+        }
+        log(`找到 ${sharedLinks.length} 个分享链接`);
+        const sharedLinkItems = await Promise.all(
+          sharedLinks.map(async (sharedLink) => {
+            log('正在读取分享链接中的媒体');
+            return await this.apiUtils.getAllMediaInSharedLink(sharedLink.linkId);
+          })
+        );
+        return sharedLinkItems.flat();
+      },
+      albums: async () => {
+        if (!filter.albumsInclude) {
+          log('未选择目标相册！', 'error');
+          throw new Error('未选择目标相册');
+        }
+        const albumMediaKeys = Array.isArray(filter.albumsInclude) ? filter.albumsInclude : [filter.albumsInclude];
+        // Only trust a known boolean isShared; a missing value (stale/old cache) stays unknown so the fetch below resolves it.
+        const sharedByAlbumKey = new Map<string, boolean>(
+          (getFromStorage<Album[]>('albums') ?? [])
+            .filter((album) => typeof album.isShared === 'boolean')
+            .map((album) => [album.mediaKey, album.isShared as boolean])
+        );
+        if (albumMediaKeys.some((albumMediaKey) => !sharedByAlbumKey.has(albumMediaKey))) {
+          const albums = await this.apiUtils.getAllAlbums();
+          for (const album of albums) {
+            if (typeof album.isShared === 'boolean') sharedByAlbumKey.set(album.mediaKey, album.isShared);
+          }
+        }
+        const albumItems = await Promise.all(
+          albumMediaKeys.map(async (albumMediaKey) => {
+            log('正在读取相册内容');
+            const { title: albumTitle, items } = await this.apiUtils.getAllMediaInAlbumWithContext(albumMediaKey);
+            return items.map((item) => ({
+              ...item,
+              sourceAlbumMediaKey: albumMediaKey,
+              sourceAlbumTitle: albumTitle,
+              sourceAlbumIsShared: sharedByAlbumKey.get(albumMediaKey) ?? false,
+            }));
+          })
+        );
+        return albumItems.flat();
+      },
+    };
+
+    const handler = sourceHandlers[source];
+    if (!handler) {
+      log(`未知来源：${source}`, 'error');
+      return [];
+    }
+
+    const mediaItems = await handler();
+    log('来源读取完成');
+    return mediaItems;
+  }
+
+  async applyFilters(mediaItems: MediaItem[], filter: Filter, source: Source): Promise<MediaItem[]> {
+    let filteredItems = mediaItems;
+
+    const filtersToApply: Array<{ condition: boolean; method: () => MediaItem[] | Promise<MediaItem[]> }> = [
+      {
+        condition: source !== 'library' && Boolean(filter.lowerBoundaryDate ?? filter.higherBoundaryDate),
+        method: () => filters.filterByDate(filteredItems, filter),
+      },
+      {
+        condition: !!filter.albumsExclude,
+        method: async () => await this.excludeAlbumItems(filteredItems, filter),
+      },
+      {
+        condition: !!filter.excludeShared,
+        method: async () => await this.excludeSharedItems(filteredItems),
+      },
+      {
+        condition: !!filter.owned,
+        method: () => filters.filterOwned(filteredItems, filter),
+      },
+      {
+        condition: Boolean(filter.hasLocation ?? filter.boundSouth ?? filter.boundWest ?? filter.boundNorth ?? filter.boundEast),
+        method: () => filters.filterByLocation(filteredItems, filter),
+      },
+      {
+        condition: !!filter.uploadStatus,
+        method: () => filters.filterByUploadStatus(filteredItems, filter),
+      },
+      {
+        condition: !!filter.archived,
+        method: () => filters.filterArchived(filteredItems, filter),
+      },
+      {
+        condition: Boolean(filter.favorite ?? filter.excludeFavorites),
+        method: () => filters.filterFavorite(filteredItems, filter),
+      },
+      {
+        condition: !!filter.type,
+        method: () => filters.filterByMediaType(filteredItems, filter),
+      },
+      {
+        condition: Boolean(filter.minWidth ?? filter.maxWidth ?? filter.minHeight ?? filter.maxHeight),
+        method: () => filters.resolutionFilter(filteredItems, filter),
+      },
+      {
+        condition: Boolean(filter.minDuration ?? filter.maxDuration),
+        method: () => filters.durationFilter(filteredItems, filter),
+      },
+    ];
+
+    for (const { condition, method } of filtersToApply) {
+      if (condition && filteredItems.length) {
+        filteredItems = await method();
+      }
+    }
+
+    if (
+      filteredItems.length &&
+      (filter.space ?? filter.quality ?? filter.lowerBoundarySize ?? filter.higherBoundarySize ?? filter.fileNameRegex ?? filter.descriptionRegex)
+    ) {
+      filteredItems = await this.extendMediaItemsWithMediaInfo(filteredItems);
+
+      const extendedFilters: Array<{ condition: boolean; method: () => MediaItem[] }> = [
+        { condition: !!filter.fileNameRegex, method: () => filters.fileNameFilter(filteredItems, filter) },
+        { condition: !!filter.descriptionRegex, method: () => filters.descriptionFilter(filteredItems, filter) },
+        { condition: !!filter.space, method: () => filters.spaceFilter(filteredItems, filter) },
+        { condition: !!filter.quality, method: () => filters.qualityFilter(filteredItems, filter) },
+        {
+          condition: Boolean(filter.lowerBoundarySize ?? filter.higherBoundarySize),
+          method: () => filters.sizeFilter(filteredItems, filter),
+        },
+      ];
+
+      for (const { condition, method } of extendedFilters) {
+        if (condition && filteredItems.length) {
+          filteredItems = method();
+        }
+      }
+    }
+
+    if (filter.sortBySize && filteredItems.length) {
+      filteredItems = await this.extendMediaItemsWithMediaInfo(filteredItems);
+      filteredItems.sort((a, b) => (b.size ?? 0) - (a.size ?? 0));
+    }
+
+    if (filteredItems.length > 0 && filter.similarityThreshold) {
+      filteredItems = await filters.filterSimilar(this, filteredItems, filter);
+    }
+
+    return filteredItems;
+  }
+
+  async excludeAlbumItems(mediaItems: MediaItem[], filter: Filter): Promise<MediaItem[]> {
+    const albumMediaKeys = Array.isArray(filter.albumsExclude) ? filter.albumsExclude : [filter.albumsExclude ?? ''];
+
+    const excludedItemArrays = await Promise.all(
+      albumMediaKeys.map(async (albumMediaKey) => {
+        log('正在读取待排除的相册内容');
+        return await this.apiUtils.getAllMediaInAlbum(albumMediaKey);
+      })
+    );
+
+    log('正在排除相册中的项目');
+    const excludeKeys = new Set(excludedItemArrays.flat().map((item) => item.dedupKey));
+    return mediaItems.filter((mediaItem) => !excludeKeys.has(mediaItem.dedupKey));
+  }
+
+  async excludeSharedItems(mediaItems: MediaItem[]): Promise<MediaItem[]> {
+    log('正在读取待排除的分享内容');
+    const sharedLinks = await this.apiUtils.getAllSharedLinks();
+
+    const excludedItemArrays = await Promise.all(
+      sharedLinks.map(async (sharedLink) => {
+        return await this.apiUtils.getAllMediaInSharedLink(sharedLink.linkId);
+      })
+    );
+
+    log('正在排除已分享的项目');
+    const excludeKeys = new Set(excludedItemArrays.flat().map((item) => item.dedupKey));
+    return mediaItems.filter((mediaItem) => !excludeKeys.has(mediaItem.dedupKey));
+  }
+
+  async extendMediaItemsWithMediaInfo(mediaItems: MediaItem[]): Promise<MediaItem[]> {
+    const mediaInfoData = await this.apiUtils.getBatchMediaInfoChunked(mediaItems);
+
+    const infoByKey = new Map(mediaInfoData.map((info) => [info.mediaKey, info]));
+    const extendedMediaItems = mediaItems.map((item) => {
+      const matchingInfoItem = infoByKey.get(item.mediaKey);
+      return { ...item, ...matchingInfoItem };
+    });
+    return extendedMediaItems;
+  }
+
+  async getLibraryItemsByTakenDate(filter: Filter): Promise<MediaItem[]> {
+    let source: string | undefined;
+    if (filter.archived === 'true') {
+      source = 'archive';
+    } else if (filter.archived === 'false') {
+      source = 'library';
+    }
+
+    let lowerBoundaryDate = new Date(filter.lowerBoundaryDate ?? '').getTime();
+    let higherBoundaryDate = new Date(filter.higherBoundaryDate ?? '').getTime();
+
+    lowerBoundaryDate = isNaN(lowerBoundaryDate) ? -Infinity : lowerBoundaryDate;
+    higherBoundaryDate = isNaN(higherBoundaryDate) ? Infinity : higherBoundaryDate;
+
+    const mediaItems: MediaItem[] = [];
+
+    let nextPageId: string | null = null;
+
+    if ((Number.isInteger(lowerBoundaryDate) || Number.isInteger(higherBoundaryDate)) && filter.intervalType === 'include') {
+      let nextPageTimestamp: number | null = higherBoundaryDate !== Infinity ? higherBoundaryDate : null;
+      do {
+        if (!this.isProcessRunning) return mediaItems;
+        const mediaPage: LibraryTimelinePage = await this.api.getItemsByTakenDate(nextPageTimestamp, source ?? null, nextPageId);
+        nextPageId = mediaPage?.nextPageId ?? null;
+        if (!mediaPage) { log('页面数据为空，已跳过', 'error'); continue; }
+        nextPageTimestamp = mediaPage.lastItemTimestamp - 1;
+        if (!mediaPage.items || mediaPage.items.length === 0) continue;
+        mediaPage.items = mediaPage.items.filter((item) => item.timestamp >= lowerBoundaryDate && item.timestamp <= higherBoundaryDate);
+        if (!mediaPage.items || mediaPage.items.length === 0) continue;
+        log(`本页找到 ${mediaPage.items.length} 项`);
+        mediaItems.push(...mediaPage.items);
+      } while ((nextPageId && !nextPageTimestamp) || (nextPageTimestamp && nextPageTimestamp > lowerBoundaryDate));
+    } else if ((Number.isInteger(lowerBoundaryDate) || Number.isInteger(higherBoundaryDate)) && filter.intervalType === 'exclude') {
+      let nextPageTimestamp: number | null = null;
+      do {
+        if (!this.isProcessRunning) return mediaItems;
+        const mediaPage: LibraryTimelinePage = await this.api.getItemsByTakenDate(nextPageTimestamp, source ?? null, nextPageId);
+        nextPageId = mediaPage?.nextPageId ?? null;
+        if (!mediaPage) { log('页面数据为空，已跳过', 'error'); continue; }
+        nextPageTimestamp = mediaPage.lastItemTimestamp - 1;
+        if (!mediaPage.items || mediaPage.items.length === 0) continue;
+        mediaPage.items = mediaPage.items.filter((item) => item.timestamp < lowerBoundaryDate || item.timestamp > higherBoundaryDate);
+
+        if (nextPageTimestamp > lowerBoundaryDate && nextPageTimestamp < higherBoundaryDate) {
+          nextPageTimestamp = lowerBoundaryDate;
+        } else {
+          nextPageTimestamp = mediaPage.lastItemTimestamp - 1;
+        }
+
+        if (!mediaPage.items || mediaPage.items.length === 0) continue;
+
+        log(`本页找到 ${mediaPage.items.length} 项`);
+        mediaItems.push(...mediaPage.items);
+      } while (nextPageId);
+    } else {
+      let nextPageTimestamp: number | null = null;
+      do {
+        if (!this.isProcessRunning) return mediaItems;
+        const mediaPage: LibraryTimelinePage = await this.api.getItemsByTakenDate(nextPageTimestamp, source ?? null, nextPageId);
+        nextPageId = mediaPage?.nextPageId ?? null;
+        if (!mediaPage) { log('页面数据为空，已跳过', 'error'); continue; }
+        nextPageTimestamp = mediaPage.lastItemTimestamp - 1;
+        if (!mediaPage.items || mediaPage.items.length === 0) continue;
+        log(`本页找到 ${mediaPage.items.length} 项`);
+        mediaItems.push(...mediaPage.items);
+      } while (nextPageId);
+    }
+
+    return mediaItems;
+  }
+
+  async getLibraryItemsByUploadDate(filter: Filter): Promise<MediaItem[]> {
+    let lowerBoundaryDate = new Date(filter.lowerBoundaryDate ?? '').getTime();
+    let higherBoundaryDate = new Date(filter.higherBoundaryDate ?? '').getTime();
+
+    lowerBoundaryDate = isNaN(lowerBoundaryDate) ? -Infinity : lowerBoundaryDate;
+    higherBoundaryDate = isNaN(higherBoundaryDate) ? Infinity : higherBoundaryDate;
+
+    const mediaItems: MediaItem[] = [];
+
+    let nextPageId: string | null = null;
+    let skipTheRest = false;
+
+    do {
+      if (!this.isProcessRunning) return mediaItems;
+      const mediaPage = await this.api.getItemsByUploadedDate(nextPageId);
+      nextPageId = mediaPage?.nextPageId ?? null;
+      if (!mediaPage) { log('页面数据为空，已跳过', 'error'); continue; }
+      if (!mediaPage.items || mediaPage.items.length === 0) continue;
+      const lastTimeStamp = mediaPage.items[mediaPage.items.length - 1].creationTimestamp;
+      let filteredPageItems = mediaPage.items;
+      if (filter.intervalType === 'include') {
+        filteredPageItems = mediaPage.items.filter(
+          (item: MediaItem) => item.creationTimestamp >= lowerBoundaryDate && item.creationTimestamp <= higherBoundaryDate
+        );
+        skipTheRest = lastTimeStamp < lowerBoundaryDate;
+      } else if (filter.intervalType === 'exclude') {
+        filteredPageItems = mediaPage.items.filter(
+          (item: MediaItem) => item.creationTimestamp < lowerBoundaryDate || item.creationTimestamp > higherBoundaryDate
+        );
+      }
+      if (!filteredPageItems || filteredPageItems.length === 0) continue;
+      log(`本页找到 ${filteredPageItems.length} 项`);
+      mediaItems.push(...filteredPageItems);
+    } while (nextPageId && !skipTheRest);
+
+    return mediaItems;
+  }
+
+  preChecks(filter: Filter): void {
+    if (filter.fileNameRegex) {
+      const isValid = isPatternValid(filter.fileNameRegex);
+      if (isValid !== true) throw new Error(String(isValid));
+    }
+    if (filter.descriptionRegex) {
+      const isValid = isPatternValid(filter.descriptionRegex);
+      if (isValid !== true) throw new Error(String(isValid));
+    }
+    if (parseInt(filter.lowerBoundarySize ?? '0') >= parseInt(filter.higherBoundarySize ?? '0') &&
+        parseInt(filter.lowerBoundarySize ?? '0') > 0 && parseInt(filter.higherBoundarySize ?? '0') > 0) {
+      throw new Error('文件大小筛选无效');
+    }
+    const minW = parseInt(filter.minWidth ?? '0');
+    const maxW = parseInt(filter.maxWidth ?? '0');
+    if (minW > 0 && maxW > 0 && minW >= maxW) {
+      throw new Error('分辨率筛选无效：最小宽度必须小于最大宽度');
+    }
+    const minH = parseInt(filter.minHeight ?? '0');
+    const maxH = parseInt(filter.maxHeight ?? '0');
+    if (minH > 0 && maxH > 0 && minH >= maxH) {
+      throw new Error('分辨率筛选无效：最小高度必须小于最大高度');
+    }
+    const minDuration = parseFloat(filter.minDuration ?? '');
+    const maxDuration = parseFloat(filter.maxDuration ?? '');
+    if (!isNaN(minDuration) && minDuration < 0) {
+      throw new Error('时长筛选无效：最小时长不能为负数');
+    }
+    if (!isNaN(maxDuration) && maxDuration < 0) {
+      throw new Error('时长筛选无效：最大时长不能为负数');
+    }
+    if (!isNaN(minDuration) && !isNaN(maxDuration) && minDuration >= maxDuration) {
+      throw new Error('时长筛选无效：最小时长必须小于最大时长');
+    }
+    const bS = parseFloat(filter.boundSouth ?? '');
+    const bW = parseFloat(filter.boundWest ?? '');
+    const bN = parseFloat(filter.boundNorth ?? '');
+    const bE = parseFloat(filter.boundEast ?? '');
+    const hasSomeBounds = [bS, bW, bN, bE].some((v) => !isNaN(v));
+    const hasAllBounds = [bS, bW, bN, bE].every((v) => !isNaN(v));
+    if (hasSomeBounds && !hasAllBounds) {
+      throw new Error('矩形范围：必须同时填写南纬、西经、北纬、东经四个坐标');
+    }
+    if (hasAllBounds && bS >= bN) {
+      throw new Error('矩形范围：南纬必须小于北纬');
+    }
+  }
+
+  async actionWithFilter(
+    action: Action,
+    filter: Filter,
+    source: Source,
+    targetAlbum?: Album,
+    newTargetAlbumName?: string,
+    apiSettings?: ApiSettings
+  ): Promise<void> {
+    try {
+      this.preChecks(filter);
+    } catch (error) {
+      log(String(error), 'error');
+      return;
+    }
+
+    this.isProcessRunning = true;
+    document.dispatchEvent(new Event('change'));
+    this.apiUtils = new ApiUtils(this, apiSettings ?? apiSettingsDefault);
+
+    try {
+      const startTime = new Date();
+      const mediaItems = await this.getAndFilterMedia(filter, source);
+
+      if (!mediaItems?.length) {
+        log('没有可处理的项目');
+        return;
+      }
+
+      if (!this.isProcessRunning) return;
+
+      await this.executeAction(action, {
+        mediaItems,
+        source,
+        targetAlbum,
+        newTargetAlbumName,
+        preserveOrder: Boolean(filter.similarityThreshold ?? filter.sortBySize),
+      });
+
+      log(`任务完成，用时 ${timeToHHMMSS(new Date().getTime() - startTime.getTime())}`, 'success');
+    } catch (error) {
+      log((error instanceof Error ? error.stack : String(error)) ?? '未知错误', 'error');
+    } finally {
+      this.isProcessRunning = false;
+    }
+  }
+
+  async executeAction(action: Action, params: ExecuteActionParams): Promise<void> {
+    log(`待处理项目：${params.mediaItems.length} 项`);
+
+    let actionId = action.elementId;
+    if (actionId === 'restoreTrash' || params.source === 'trash') actionId = 'restoreTrash';
+    if (actionId === 'unLock' || params.source === 'lockedFolder') actionId = 'unLock';
+
+    const handler = this.actionHandlers[actionId];
+    if (handler) {
+      await handler(params);
+    } else {
+      log(`未知操作：${actionId}`, 'error');
+    }
+  }
+}

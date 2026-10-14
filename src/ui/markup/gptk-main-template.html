@@ -1,0 +1,343 @@
+<div class="overlay"></div>
+<div id="gptk" class="container">
+
+  <!-- ── HEADER ─────────────────────────────────── -->
+  <div class="header">
+    <div class="header-info">
+      <div class="header-icon">
+        <svg width="18" height="18" viewBox="0 0 17 17" fill="currentColor">
+          <path d="M6.838,11.784 L12.744,5.879 C13.916,6.484 15.311,6.372 16.207,5.477 C16.897,4.786 17.131,3.795 16.923,2.839 L15.401,4.358 L14.045,4.624 L12.404,2.999 L12.686,1.603 L14.195,0.113 C13.24,-0.095 12.248,0.136 11.557,0.827 C10.661,1.723 10.549,3.117 11.155,4.291 L5.249,10.197 C4.076,9.592 2.681,9.705 1.784,10.599 C1.096,11.29 0.862,12.281 1.069,13.236 L2.592,11.717 L3.947,11.452 L5.59,13.077 L5.306,14.473 L3.797,15.963 C4.752,16.17 5.744,15.94 6.434,15.249 C7.33,14.354 7.443,12.958 6.838,11.784 Z"></path>
+        </svg>
+      </div>
+      <div class="header-text">GPTK</div>
+    </div>
+    <div class="header-steps">
+      <span class="step-badge">1</span> 来源
+      <span class="step-arrow">&rarr;</span>
+      <span class="step-badge">2</span> 筛选
+      <span class="step-arrow">&rarr;</span>
+      <span class="step-badge">3</span> 操作
+    </div>
+    <div id="hide" title="隐藏">
+      <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18"><path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"/></svg>
+    </div>
+  </div>
+
+  <!-- ── BODY: LEFT PANEL (Source + Filters) | RIGHT PANEL (Actions + Log) ── -->
+  <div class="window-body">
+
+    <!-- ─── LEFT: Source → Filters ────────────── -->
+    <div class="sidebar scroll">
+
+      <!-- STEP 1: Source -->
+      <div class="panel-section">
+        <div class="section-label"><span class="step-badge">1</span> 选择来源</div>
+        <div class="sources">
+          <div class="source">
+            <input type="radio" name="source" id="library" class="sourceHeaderInput" checked="checked">
+            <label class="sourceHeader" for="library">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5-7l-3 3.72L9 13l-3 4h12l-4-5z"></path></svg>
+              照片库
+            </label>
+          </div>
+          <div class="source">
+            <input type="radio" name="source" id="search" class="sourceHeaderInput">
+            <label class="sourceHeader" for="search">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M20.49 19l-5.73-5.73C15.53 12.2 16 10.91 16 9.5A6.5 6.5 0 1 0 9.5 16c1.41 0 2.7-.47 3.77-1.24L19 20.49 20.49 19zM5 9.5C5 7.01 7.01 5 9.5 5S14 7.01 14 9.5 11.99 14 9.5 14 5 11.99 5 9.5z"></path></svg>
+              搜索
+            </label>
+          </div>
+          <div class="source">
+            <input type="radio" name="source" id="albums" class="sourceHeaderInput">
+            <label class="sourceHeader" for="albums">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 18H6V4h6v7l2.5-1.88L17 11V4h1v16zm-4.33-6L17 18H7l2.5-3.2 1.67 2.18 2.5-2.98z"></path></svg>
+              相册
+            </label>
+          </div>
+          <div class="source">
+            <input type="radio" name="source" id="sharedLinks" class="sourceHeaderInput">
+            <label class="sourceHeader" for="sharedLinks">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8z"></path></svg>
+              分享
+            </label>
+          </div>
+          <div class="source">
+            <input type="radio" name="source" id="favorites" class="sourceHeaderInput">
+            <label class="sourceHeader" for="favorites">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.04 4.38.38-3.32 2.88 1 4.28L12 15.4z"></path></svg>
+              收藏
+            </label>
+          </div>
+          <div class="source">
+            <input type="radio" name="source" id="trash" class="sourceHeaderInput">
+            <label class="sourceHeader" for="trash">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M15 4V3H9v1H4v2h1v13c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V6h1V4h-5zm2 15H7V6h10v13zM9 8h2v9H9zm4 0h2v9h-2z"></path></svg>
+              回收站
+            </label>
+          </div>
+          <div class="source">
+            <input type="radio" name="source" id="lockedFolder" class="sourceHeaderInput">
+            <label class="sourceHeader" for="lockedFolder">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"></path></svg>
+              锁定文件夹
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Filters -->
+      <div class="panel-section">
+        <div class="section-label">
+          <span class="step-badge">2</span> 筛选条件
+          <div class="flex centered" title="重置全部筛选条件" id="filterResetButton">
+            <svg xmlns="http://www.w3.org/2000/svg" height="14" viewBox="0 -960 960 960" width="14"><path d="M440-122q-121-15-200.5-105.5T160-440q0-66 26-126.5T260-672l57 57q-38 34-57.5 79T240-440q0 88 56 155.5T440-202v80Zm80 0v-80q87-16 143.5-83T720-440q0-100-70-170t-170-70h-3l44 44-56 56-140-140 140-140 56 56-44 44h3q134 0 227 93t93 227q0 121-79.5 211.5T520-122Z"/></svg>
+            重置
+          </div>
+        </div>
+      </div>
+
+      <form class="filters-form">
+        <details open class="include-albums">
+          <summary>选择相册</summary>
+          <fieldset>
+            <select size="5" multiple="multiple" class="select-multiple albums-select scroll" name="albumsInclude" required>
+              <option value="" title="第一个相册">请点击刷新按钮</option>
+            </select>
+            <div class="select-control-buttons-row">
+              <div class="refresh-albums svg-container" title="刷新相册列表">
+                <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20"><path d="M482-160q-134 0-228-93t-94-227v-7l-64 64-56-56 160-160 160 160-56 56-64-64v7q0 100 70.5 170T482-240q26 0 51-6t49-18l60 60q-38 22-78 33t-82 11Zm278-161L600-481l56-56 64 64v-7q0-100-70.5-170T478-720q-26 0-51 6t-49 18l-60-60q38-22 78-33t82-11q134 0 228 93t94 227v7l64-64 56 56-160 160Z"></path></svg>
+              </div>
+              <button type="button" name="selectAll">全选</button>
+              <button type="button" name="resetAlbumSelection">重置</button>
+            </div>
+            <div class="select-control-buttons-row">
+              <button type="button" name="selectShared">已分享</button>
+              <button type="button" name="selectNonShared">未分享</button>
+            </div>
+          </fieldset>
+        </details>
+
+        <details open class="search">
+          <summary>搜索</summary>
+          <fieldset>
+            <label class="form-control">
+              <legend>搜索关键词：</legend>
+              <input name="searchQuery" value="" type="input" placeholder="输入搜索关键词..." required>
+            </label>
+          </fieldset>
+        </details>
+
+        <details class="exclude-albums"><summary>排除相册</summary><fieldset>
+          <select size="5" multiple="multiple" class="select-multiple albums-select scroll" name="albumsExclude"><option value="" title="第一个相册">请点击刷新按钮</option></select>
+          <div class="select-control-buttons-row">
+            <div class="refresh-albums svg-container" title="刷新相册列表"><svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20"><path d="M482-160q-134 0-228-93t-94-227v-7l-64 64-56-56 160-160 160 160-56 56-64-64v7q0 100 70.5 170T482-240q26 0 51-6t49-18l60 60q-38 22-78 33t-82 11Zm278-161L600-481l56-56 64 64v-7q0-100-70.5-170T478-720q-26 0-51 6t-49 18l-60-60q38-22 78-33t82-11q134 0 228 93t94 227v7l64-64 56 56-160 160Z"></path></svg></div>
+            <button type="button" name="selectAll">全选</button>
+            <button type="button" name="resetAlbumSelection">重置</button>
+          </div>
+          <div class="select-control-buttons-row">
+            <button type="button" name="selectShared">已分享</button>
+            <button type="button" name="selectNonShared">未分享</button>
+          </div>
+        </fieldset></details>
+
+        <details class="date-interval"><summary>日期区间</summary><fieldset>
+          <legend>起始：</legend>
+          <div class="flex centered input-wrapper">
+            <input type="datetime-local" name="lowerBoundaryDate">
+            <div class="date-reset flex centered" title="清空该输入框" name="dateReset"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56"><path d="M 13.7851 49.5742 L 42.2382 49.5742 C 47.1366 49.5742 49.5743 47.1367 49.5743 42.3086 L 49.5743 13.6914 C 49.5743 8.8633 47.1366 6.4258 42.2382 6.4258 L 13.7851 6.4258 C 8.9101 6.4258 6.4257 8.8398 6.4257 13.6914 L 6.4257 42.3086 C 6.4257 47.1602 8.9101 49.5742 13.7851 49.5742 Z M 19.6913 38.3711 C 18.5429 38.3711 17.5820 37.4336 17.5820 36.2852 C 17.5820 35.7461 17.8163 35.2305 18.2382 34.8086 L 25.0351 27.9649 L 18.2382 21.1445 C 17.8163 20.7227 17.5820 20.2071 17.5820 19.6680 C 17.5820 18.4961 18.5429 17.5352 19.6913 17.5352 C 20.2539 17.5352 20.7460 17.7461 21.1679 18.1680 L 28.0117 25.0118 L 34.8554 18.1680 C 35.2539 17.7461 35.7695 17.5352 36.3085 17.5352 C 37.4804 17.5352 38.4413 18.4961 38.4413 19.6680 C 38.4413 20.2071 38.2070 20.7227 37.7851 21.1445 L 30.9648 27.9649 L 37.7851 34.8086 C 38.2070 35.2305 38.4413 35.7461 38.4413 36.2852 C 38.4413 37.4336 37.4804 38.3711 36.3085 38.3711 C 35.7695 38.3711 35.2539 38.1602 34.8788 37.7852 L 28.0117 30.8945 L 21.1444 37.7852 C 20.7460 38.1602 20.2773 38.3711 19.6913 38.3711 Z"/></svg></div>
+          </div>
+          <legend>结束：</legend>
+          <div class="flex centered input-wrapper">
+            <input type="datetime-local" name="higherBoundaryDate">
+            <div class="date-reset flex centered" title="清空该输入框" name="dateReset"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56"><path d="M 13.7851 49.5742 L 42.2382 49.5742 C 47.1366 49.5742 49.5743 47.1367 49.5743 42.3086 L 49.5743 13.6914 C 49.5743 8.8633 47.1366 6.4258 42.2382 6.4258 L 13.7851 6.4258 C 8.9101 6.4258 6.4257 8.8398 6.4257 13.6914 L 6.4257 42.3086 C 6.4257 47.1602 8.9101 49.5742 13.7851 49.5742 Z M 19.6913 38.3711 C 18.5429 38.3711 17.5820 37.4336 17.5820 36.2852 C 17.5820 35.7461 17.8163 35.2305 18.2382 34.8086 L 25.0351 27.9649 L 18.2382 21.1445 C 17.8163 20.7227 17.5820 20.2071 17.5820 19.6680 C 17.5820 18.4961 18.5429 17.5352 19.6913 17.5352 C 20.2539 17.5352 20.7460 17.7461 21.1679 18.1680 L 28.0117 25.0118 L 34.8554 18.1680 C 35.2539 17.7461 35.7695 17.5352 36.3085 17.5352 C 37.4804 17.5352 38.4413 18.4961 38.4413 19.6680 C 38.4413 20.2071 38.2070 20.7227 37.7851 21.1445 L 30.9648 27.9649 L 37.7851 34.8086 C 38.2070 35.2305 38.4413 35.7461 38.4413 36.2852 C 38.4413 37.4336 37.4804 38.3711 36.3085 38.3711 C 35.7695 38.3711 35.2539 38.1602 34.8788 37.7852 L 28.0117 30.8945 L 21.1444 37.7852 C 20.7460 38.1602 20.2773 38.3711 19.6913 38.3711 Z"/></svg></div>
+          </div>
+          <hr>
+          <div class="radio-group">
+            <label class="form-control"><input name="intervalType" type="radio" value="include" checked="checked"><span>包含该区间</span></label>
+            <label class="form-control"><input name="intervalType" type="radio" value="exclude"><span>排除该区间</span></label>
+          </div>
+          <hr>
+          <div class="radio-group">
+            <label class="form-control"><input name="dateType" type="radio" value="taken" checked="checked"><span>拍摄日期</span></label>
+            <label class="form-control"><input name="dateType" type="radio" value="uploaded"><span>上传日期</span></label>
+          </div>
+        </fieldset></details>
+
+        <details class="filename"><summary>文件名</summary><fieldset>
+          <label class="form-control"><legend>正则：</legend><input name="fileNameRegex" value="" type="input" placeholder="例：\.png$"></label>
+          <div class="radio-group">
+            <label class="form-control"><input name="fileNameMatchType" value="include" type="radio" checked="checked"> 匹配则保留</label>
+            <label class="form-control"><input name="fileNameMatchType" value="exclude" type="radio"> 匹配则排除</label>
+          </div>
+        </fieldset></details>
+
+        <details class="description"><summary>描述</summary><fieldset>
+          <label class="form-control"><legend>正则：</legend><input name="descriptionRegex" value="" type="input" placeholder="例：vacation"></label>
+          <div class="radio-group">
+            <label class="form-control"><input name="descriptionMatchType" value="include" type="radio" checked="checked"> 匹配则保留</label>
+            <label class="form-control"><input name="descriptionMatchType" value="exclude" type="radio"> 匹配则排除</label>
+          </div>
+        </fieldset></details>
+
+        <details class="space"><summary>空间占用</summary><fieldset><div class="radio-group">
+          <label class="form-control"><input name="space" value="" type="radio" checked="checked"> 不限</label>
+          <label class="form-control"><input name="space" value="consuming" type="radio"> 占用空间</label>
+          <label class="form-control"><input name="space" value="non-consuming" type="radio"> 不占空间</label>
+        </div></fieldset></details>
+
+        <details class="similarity"><summary>相似度</summary>
+          <fieldset><span class="filter-note">查找并归组相似图片。建议配合「加入相册」操作使用。</span></fieldset>
+          <fieldset>
+            <legend>相似度阈值</legend><div class="input-wrapper"><input name="similarityThreshold" type="number" placeholder="0.95" step="0.01" max="1" min="0"></div>
+            <legend>比对图高度</legend><div class="input-wrapper"><input name="imageHeight" type="number" placeholder="像素" value="16"></div>
+          </fieldset>
+        </details>
+
+        <details class="size"><summary>文件大小</summary><fieldset>
+          <legend>大于</legend><div class="input-wrapper"><input name="lowerBoundarySize" type="number" placeholder="字节"></div>
+          <legend>小于</legend><div class="input-wrapper"><input name="higherBoundarySize" type="number" placeholder="字节"></div>
+        </fieldset></details>
+
+        <details class="resolution"><summary>分辨率</summary><fieldset>
+          <legend>最小宽度</legend><div class="input-wrapper"><input name="minWidth" type="number" placeholder="像素"></div>
+          <legend>最大宽度</legend><div class="input-wrapper"><input name="maxWidth" type="number" placeholder="像素"></div>
+          <legend>最小高度</legend><div class="input-wrapper"><input name="minHeight" type="number" placeholder="像素"></div>
+          <legend>最大高度</legend><div class="input-wrapper"><input name="maxHeight" type="number" placeholder="像素"></div>
+        </fieldset></details>
+
+        <details class="duration"><summary>时长</summary><fieldset>
+          <legend>最短时长</legend><div class="input-wrapper"><input name="minDuration" type="number" min="0" step="0.1" placeholder="秒"></div>
+          <legend>最长时长</legend><div class="input-wrapper"><input name="maxDuration" type="number" min="0" step="0.1" placeholder="秒"></div>
+        </fieldset></details>
+
+        <details class="quality"><summary>画质</summary><fieldset><div class="radio-group">
+          <label class="form-control"><input name="quality" value="" type="radio" checked="checked"> 不限</label>
+          <label class="form-control"><input name="quality" value="original" type="radio"> 原始画质</label>
+          <label class="form-control"><input name="quality" value="storage-saver" type="radio"> 节省存储</label>
+        </div></fieldset></details>
+
+        <details class="type"><summary>类型</summary><fieldset><div class="radio-group">
+          <label class="form-control"><input name="type" value="" type="radio" checked="checked"> 不限</label>
+          <label class="form-control"><input name="type" value="image" type="radio"> 图片</label>
+          <label class="form-control"><input name="type" value="video" type="radio"> 视频</label>
+          <label class="form-control"><input name="type" value="live" type="radio"> 动态照片</label>
+        </div></fieldset></details>
+
+        <details class="upload-status"><summary>上传状态</summary><fieldset><div class="radio-group">
+          <label class="form-control"><input name="uploadStatus" value="" type="radio" checked="checked"> 不限</label>
+          <label class="form-control"><input name="uploadStatus" value="full" type="radio"> 已完整上传</label>
+          <label class="form-control"><input name="uploadStatus" value="partial" type="radio"> 部分上传</label>
+        </div></fieldset></details>
+
+        <details class="archive"><summary>归档</summary><fieldset><div class="radio-group">
+          <label class="form-control"><input name="archived" value="" type="radio" checked="checked"> 不限</label>
+          <label class="form-control"><input name="archived" value="true" type="radio"> 是</label>
+          <label class="form-control"><input name="archived" value="false" type="radio"> 否</label>
+        </div></fieldset></details>
+
+        <details class="owned"><summary>所有权</summary><fieldset><div class="radio-group">
+          <label class="form-control"><input name="owned" value="" type="radio" checked="checked"> 不限</label>
+          <label class="form-control"><input name="owned" value="true" type="radio"> 本人所有</label>
+          <label class="form-control"><input name="owned" value="false" type="radio"> 非本人所有</label>
+        </div></fieldset></details>
+
+        <details class="location"><summary>位置</summary><fieldset><div class="radio-group">
+          <label class="form-control"><input name="hasLocation" value="" type="radio" checked="checked"> 不限</label>
+          <label class="form-control"><input name="hasLocation" value="true" type="radio"> 有位置信息</label>
+          <label class="form-control"><input name="hasLocation" value="false" type="radio"> 无位置信息</label>
+        </div></fieldset>
+        <fieldset>
+          <legend>矩形范围（可选）</legend>
+          <span class="filter-note">仅保留该范围内的项目。请使用十进制度数（例如巴黎为 48.85）。</span>
+          <legend>南纬</legend><div class="input-wrapper"><input name="boundSouth" type="number" placeholder="-90 至 90" step="any" min="-90" max="90"></div>
+          <legend>西经</legend><div class="input-wrapper"><input name="boundWest" type="number" placeholder="-180 至 180" step="any" min="-180" max="180"></div>
+          <legend>北纬</legend><div class="input-wrapper"><input name="boundNorth" type="number" placeholder="-90 至 90" step="any" min="-90" max="90"></div>
+          <legend>东经</legend><div class="input-wrapper"><input name="boundEast" type="number" placeholder="-180 至 180" step="any" min="-180" max="180"></div>
+        </fieldset></details>
+
+        <details class="favorite"><summary>收藏</summary><fieldset><div class="radio-group">
+          <label class="form-control"><input name="favorite" value="" type="radio" checked="checked"> 不限</label>
+          <label class="form-control"><input name="favorite" value="true" type="radio"> 是</label>
+          <label class="form-control"><input name="favorite" value="false" type="radio"> 否</label>
+        </div></fieldset></details>
+
+        <hr>
+        <fieldset class="exclude-shared"><label class="form-control checkbox-control"><input name="excludeShared" value="true" type="checkbox"><span>排除已分享的媒体</span></label></fieldset>
+        <fieldset class="exclude-favorites"><label class="form-control checkbox-control"><input name="excludeFavorites" value="true" type="checkbox"><span>排除收藏内容</span></label></fieldset>
+        <fieldset class="sort-by-size"><label class="form-control checkbox-control"><input name="sortBySize" value="true" type="checkbox"><span>按文件大小排序</span></label></fieldset>
+      </form>
+
+      <form class="settings-form">
+        <details class="settings"><summary>高级设置</summary><fieldset>
+          <legend>单条请求最大并发数</legend><div class="input-wrapper"><input name="maxConcurrentSingleApiReq" value="30" min="1" type="number" required></div>
+          <legend>批量请求最大并发数</legend><div class="input-wrapper"><input name="maxConcurrentBatchApiReq" value="3" min="1" type="number" required></div>
+          <legend>API 操作每批数量</legend><div class="input-wrapper"><input name="operationSize" value="250" max="500" min="1" type="number" required></div>
+          <legend>锁定文件夹每批数量</legend><div class="input-wrapper"><input name="lockedFolderOpSize" value="100" max="100" min="1" type="number" required></div>
+          <legend>信息查询每批数量</legend><div class="input-wrapper"><input name="infoSize" value="5000" max="10000" min="1" type="number" required></div>
+          <div class="settings-controls">
+            <button name="save" type="submit" class="btn-primary">保存</button>
+            <button name="default">恢复默认</button>
+          </div>
+        </fieldset></details>
+      </form>
+    </div>
+
+    <!-- ─── RIGHT: Actions + Log ─────────────── -->
+    <div class="main">
+
+      <!-- STEP 3: Actions -->
+      <div class="action-bar">
+        <div class="section-label"><span class="step-badge">3</span> 选择操作</div>
+        <div class="action-buttons">
+          <button id="showExistingAlbumForm" title="添加到已有相册">加入相册</button>
+          <button id="showNewAlbumForm" title="添加到新建相册">新建相册</button>
+          <button type="button" id="removeFromAlbum" title="从所属相册中移除（仅限相册来源）">移出相册</button>
+          <button type="button" id="toTrash" title="移入回收站">移到回收站</button>
+          <button type="button" id="restoreTrash" title="从回收站还原">还原</button>
+          <button type="button" id="toArchive" title="归档">归档</button>
+          <button type="button" id="unArchive" title="取消归档">取消归档</button>
+          <button type="button" id="toFavorite" title="加入收藏">收藏</button>
+          <button type="button" id="unFavorite" title="取消收藏">取消收藏</button>
+          <button type="button" id="lock" title="移入锁定文件夹">锁定</button>
+          <button type="button" id="unLock" title="移出锁定文件夹">解锁</button>
+          <button type="button" id="copyDescFromOther" title="把 EXIF 说明复制到描述字段">复制 EXIF 描述</button>
+          <button type="button" id="setDateFromFilename" title="从文件名设置拍摄日期（类似 exiftool）">按文件名改日期</button>
+          <button type="button" id="exportMetadata" title="把元数据导出为 CSV 文件">导出元数据</button>
+        </div>
+        <div class="to-existing-container">
+          <form id="toExistingAlbum" class="album-form" title="添加到已有相册">
+            <div class="refresh-albums svg-container" title="刷新相册列表"><svg xmlns="http://www.w3.org/2000/svg" height="22" viewBox="0 -960 960 960" width="22"><path d="M482-160q-134 0-228-93t-94-227v-7l-64 64-56-56 160-160 160 160-56 56-64-64v7q0 100 70.5 170T482-240q26 0 51-6t49-18l60 60q-38 22-78 33t-82 11Zm278-161L600-481l56-56 64 64v-7q0-100-70.5-170T478-720q-26 0-51 6t-49 18l-60-60q38-22 78-33t82-11q134 0 228 93t94 227v7l64-64 56 56-160 160Z"/></svg></div>
+            <select id="existingAlbum" class="dropdown albums-select" name="targetAlbumMediaKeyExisting" required><option value="">请点击刷新按钮</option></select>
+            <button type="submit" class="btn-primary">添加</button>
+          </form>
+          <button class="return" title="返回操作列表">&larr; 返回</button>
+        </div>
+        <div class="to-new-container">
+          <form id="toNewAlbum" class="album-form" title="添加到新相册">
+            <input id="newAlbumName" type="text" placeholder="相册名称..." required>
+            <button type="submit" class="btn-primary">创建</button>
+          </form>
+          <button class="return" title="返回操作列表">&larr; 返回</button>
+        </div>
+      </div>
+
+      <!-- Filter preview + Log -->
+      <div class="filter-preview" title="筛选条件预览">
+        <span>筛选：无</span>
+      </div>
+      <div class="button-container">
+        <button id="stopProcess">停止</button>
+        <button id="clearLog">清空日志</button>
+      </div>
+      <div id="logArea" class="logarea scroll"></div>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ─────────────────────────────────── -->
+  <div class="footer">
+    <div class="info-container"><a class="homepage-link" href="%homepage%" target="_blank">%version%</a></div>
+    <div class="auto-scroll-container">
+      <label for="autoScroll"><input type="checkbox" id="autoScroll" checked="checked"><span>自动滚动</span></label>
+    </div>
+  </div>
+</div>

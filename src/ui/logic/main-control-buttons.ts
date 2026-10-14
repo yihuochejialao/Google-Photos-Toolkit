@@ -1,0 +1,24 @@
+import log from './log';
+import { core } from '../../globals';
+
+export default function controlButtonsListeners(): void {
+  const clearLogButton = document.getElementById('clearLog');
+  clearLogButton?.addEventListener('click', clearLog);
+  const stopProcessButton = document.getElementById('stopProcess');
+  stopProcessButton?.addEventListener('click', stopProcess);
+}
+
+function clearLog(): void {
+  const logContainer = document.getElementById('logArea');
+  if (logContainer) {
+    const logElements = Array.from(logContainer.childNodes);
+    for (const logElement of logElements) {
+      logElement.remove();
+    }
+  }
+}
+
+function stopProcess(): void {
+  log('正在停止任务');
+  core.isProcessRunning = false;
+}
