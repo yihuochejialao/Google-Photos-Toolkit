@@ -6,7 +6,13 @@
 
 ![界面截图](media/demo-zh.png)
 
-<sub>截图来源：本仓库 v3.3.0-zh。上游英文版界面见 [demo-en.png](media/demo-en.png)。</sub>
+<sub>截图来源：本仓库 v3.3.1-zh。上游英文版界面见 [demo-en.png](media/demo-en.png)。</sub>
+
+## 一键安装
+
+**[⬇ 安装汉化版（Tampermonkey）](https://github.com/yihuochejialao/Google-Photos-Toolkit/releases/latest/download/google_photos_toolkit.user.js)**
+
+装完打开 [photos.google.com](https://photos.google.com)，点工具栏上的 GPTK 按钮即可。
 
 ## 工作原理
 
@@ -16,8 +22,10 @@
 
 1. 为浏览器安装 [Tampermonkey](https://www.tampermonkey.net/) 用户脚本管理器
    - 如果在 Android 上，推荐 [Firefox](https://www.mozilla.org/firefox/browsers/mobile/android/)，它支持 Tampermonkey
-2. 打开本仓库的构建产物 `google_photos_toolkit.user.js`（或点击 [Install](https://github.com/xob0t/Google-Photos-Toolkit/releases/latest/download/google_photos_toolkit.user.js) 安装原版英文脚本）
-3. 确认安装
+2. 点击 **[安装汉化版](https://github.com/yihuochejialao/Google-Photos-Toolkit/releases/latest/download/google_photos_toolkit.user.js)**，由 Tampermonkey 确认安装
+   - 也可以到 [Releases](https://github.com/yihuochejialao/Google-Photos-Toolkit/releases) 页手动下载 `google_photos_toolkit.user.js`
+   - 想装原版英文脚本请去 [上游 Release](https://github.com/xob0t/Google-Photos-Toolkit/releases/latest)，**两者不要同时安装**（`@match` 范围相同，会互相冲突）
+3. 打开 [photos.google.com](https://photos.google.com)，点工具栏上的 GPTK 按钮
 
 ### 找出占用空间的媒体
 
@@ -67,10 +75,10 @@ console.log('DONE');
 ## 本地构建
 
 ```bash
-npm install
-npm run build      # 产出 google_photos_toolkit.user.js
-npm test           # 单元测试
-npm run typecheck  # 类型检查
+pnpm install
+pnpm run build     # 产出 google_photos_toolkit.user.js
+pnpm test          # 单元测试
+pnpm run typecheck # 类型检查
 ```
 
 ## 贡献
@@ -79,7 +87,8 @@ npm run typecheck  # 类型检查
 
 ## 问题反馈
 
-功能异常请到原仓库提 [issue](https://github.com/xob0t/Google-Photos-Toolkit/issues)，疑问请开 [discussion](https://github.com/xob0t/Google-Photos-Toolkit/discussions)。
+- **汉化文案、安装、打包**相关的问题：请到[本仓库的 issue](https://github.com/yihuochejialao/Google-Photos-Toolkit/issues)反馈。
+- **脚本功能本身的 bug**：请到[上游仓库](https://github.com/xob0t/Google-Photos-Toolkit/issues)反馈（用英文），一般性疑问可开 [discussion](https://github.com/xob0t/Google-Photos-Toolkit/discussions)。
 
 ## 致谢
 
